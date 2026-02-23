@@ -1,0 +1,10 @@
+data/bronze/cards/*
+!data/bronze/cards/base1.json
+!data/bronze/all_sets.json
+data/silver/*
+data/gold/*
+*.db
+
+__pycache__/
+.venv/
+.env
