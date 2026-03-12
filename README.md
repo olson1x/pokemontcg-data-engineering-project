@@ -1,5 +1,4 @@
 # Pokemon TCG Data Pipeline
-
 Projekt Data Engineering, który pobiera dane z Pokemon TCG API, przechowuje je w lokalnej bazie PostgreSQL i procesuje przez warstwy Bronze, Silver oraz Gold.
 
 ## Architektura Medallion
