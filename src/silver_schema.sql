@@ -53,21 +53,6 @@ CREATE TABLE silver_types (
 
 
 
-
--- bridge table dla relacji many-to-many
-
-
-
-CREATE TABLE silver_card_types (
-    card_id VARCHAR(50) REFERENCES silver_cards(card_id),
-    type_id INTEGER REFERENCES silver_types(type_id),
-    PRIMARY KEY (card_id, type_id)
-);
-
-
-
-
-
 CREATE TABLE silver_attacks (
     attack_id SERIAL PRIMARY KEY,
     card_id VARCHAR(50) REFERENCES silver_cards(card_id),
@@ -95,5 +80,16 @@ CREATE TABLE silver_card_weaknesses (
     card_id VARCHAR(50) REFERENCES silver_cards(card_id),
     type_id INTEGER REFERENCES silver_types(type_id),
     value VARCHAR(10),
+    PRIMARY KEY (card_id, type_id)
+);
+
+
+-- bridge table dla relacji many-to-many
+
+
+
+CREATE TABLE silver_card_types (
+    card_id VARCHAR(50) REFERENCES silver_cards(card_id),
+    type_id INTEGER REFERENCES silver_types(type_id),
     PRIMARY KEY (card_id, type_id)
 );
