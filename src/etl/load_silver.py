@@ -79,10 +79,13 @@ def run_etl():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    path = 'data/bronze/cards'
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, 'data', 'bronze', 'cards')
+    
     if not os.path.exists(path):
         print(f"Error: Path {path} not found")
         return
+
 
     files = [f for f in os.listdir(path) if f.endswith('.json')]
 

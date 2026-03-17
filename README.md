@@ -1,14 +1,22 @@
-# Pokemon TCG Data Pipeline
-Projekt Data Engineering, który pobiera dane z Pokemon TCG API, przechowuje je w lokalnej bazie PostgreSQL i procesuje przez warstwy Bronze, Silver oraz Gold.
+# Pokemon TCG Data Engineering Project
 
-## Architektura Medallion
-Projekt realizuje architekturę Medallion:
-- **Bronze**: Surowe pliki JSON pobrane z API.
-- **Silver**: Relacyjna baza danych (PostgreSQL) ze znormalizowanymi tabelami (Karty, Ataki, Artyści).
-- **Gold**: Tabele analityczne (Model Gwiazdy) zoptymalizowane pod raportowanie.
+Projekt typu End-to-End demonstrujący dwa podejścia do procesowania danych: **ETL** oraz **ELT**.
 
-### Wymagania systemowe (Linux)
-Przed uruchomieniem należy zainstalować pakiety systemowe:
-```bash
-sudo apt update
-sudo apt install python3-venv libpq-dev python3-dev postgresql postgresql-contrib
+## 🏗️ Project Structure
+
+- `data/` - Surowe dane JSON pobrane z API (Bronze Layer).
+- `sql/` - Definicje schematów bazodanowych dla warstw Silver i Gold.
+- `src/`
+    - `etl/` - Podejście **Extract-Transform-Load**: Python odpowiada za czyszczenie danych i logikę relacji przed zapisem do bazy.
+    - `elt/` - Podejście **Extract-Load-Transform**: Surowy JSON trafia do bazy (Staging), a transformacja odbywa się za pomocą SQL.
+
+## 🛠️ Technologies
+- **Python**: Inżynieria danych i orkiestracja.
+- **PostgreSQL**: Hurtownia danych (Medallion Architecture).
+- **Docker**: (Soon) Konteneryzacja całego środowiska.
+
+## 📈 Roadmap
+1. [x] Budowa rurociągu ETL w Pythonie.
+2. [ ] Budowa rurociągu ELT (JSONB + SQL Transformations).
+3. [ ] Stworzenie warstwy Gold (Analitycznej).
+4. [ ] Konteneryzacja (Docker).
