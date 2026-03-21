@@ -1,22 +1,36 @@
-# Pokemon TCG Data Engineering Project
+# Pokemon TCG - ETL vs ELT Architecture Comparison 🃏⚖️
 
-Projekt typu End-to-End demonstrujący dwa podejścia do procesowania danych: **ETL** oraz **ELT**.
+Projekt ma na celu praktyczne porównanie dwóch najpopularniejszych paradygmatów inżynierii danych: **ETL** (Extract, Transform, Load) oraz **ELT** (Extract, Load, Transform). Wykorzystujemy ten sam zbiór danych (Karty Pokémon), aby zademonstrować różnice w wydajności, skalowalności i elastyczności obu podejść.
 
-## 🏗️ Project Structure
+---
 
-- `data/` - Surowe dane JSON pobrane z API (Bronze Layer).
-- `sql/` - Definicje schematów bazodanowych dla warstw Silver i Gold.
-- `src/`
-    - `etl/` - Podejście **Extract-Transform-Load**: Python odpowiada za czyszczenie danych i logikę relacji przed zapisem do bazy.
-    - `elt/` - Podejście **Extract-Load-Transform**: Surowy JSON trafia do bazy (Staging), a transformacja odbywa się za pomocą SQL.
+## 🎯 Project Goal
 
-## 🛠️ Technologies
-- **Python**: Inżynieria danych i orkiestracja.
-- **PostgreSQL**: Hurtownia danych (Medallion Architecture).
-- **Docker**: (Soon) Konteneryzacja całego środowiska.
+Głównym założeniem jest integracja danych technicznych i rynkowych przy użyciu dwóch różnych ścieżek procesowania:
 
-## 📈 Roadmap
-1. [x] Budowa rurociągu ETL w Pythonie.
-2. [ ] Budowa rurociągu ELT (JSONB + SQL Transformations).
-3. [ ] Stworzenie warstwy Gold (Analitycznej).
-4. [ ] Konteneryzacja (Docker).
+### ⚙️ Ścieżka ETL (Python-centric)
+* **Dane:** JSON (GitHub API) / CSV (Synthetic data)
+* **Proces:** Cała logika transformacji (czyszczenie, typowanie danych, mapowanie relacji) odbywa się w Pythonie przed załadowaniem do bazy.
+* **Zastosowanie:** Precyzyjne sterowanie obiektowe, skomplikowana logika biznesowa w kodzie.
+
+### ⚡ Ścieżka ELT (Database-centric)
+* **Dane:** Te same źródła (JSON/CSV).
+* **Proces:** Szybki import surowych danych (Raw/Staging) do PostgreSQL za pomocą komend systemowych (`COPY`), a następnie transformacja przy użyciu czystego SQL.
+* **Zastosowanie:** Wykorzystanie mocy obliczeniowej silnika bazy danych, szybkość przy dużych wolumenach (Big Data).
+
+---
+
+## 🛠️ Tech Stack
+
+* **Language:** Python 3.x (ETL Engine)
+* **Database:** PostgreSQL (ELT Engine & Storage)
+* **Ops:** Docker & Docker Compose (Containerization 🏗️)
+* **Libraries:** `psycopg2`, `requests`, `python-dotenv`
+
+---
+
+## 📂 Data Architecture (Medallion)
+
+* **Bronze (Raw):** Surowe pliki wejściowe (JSON/CSV).
+* **Staging (ELT only):** Tymczasowe tabele techniczne przechowujące dane "as-is".
+* **Silver (Production):** Docelowy model relacyjny (`cards`, `sets`, `artists`) zasilany obiema metodami dla porównania wyników.

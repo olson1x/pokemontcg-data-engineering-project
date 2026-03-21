@@ -38,6 +38,7 @@ CREATE TABLE silver_cards (
     image_url_large TEXT,
     artist_id INTEGER REFERENCES silver_artists(artist_id),
     set_id VARCHAR(50) REFERENCES silver_sets(set_id),
+    market_price NUMERIC (10, 2)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
