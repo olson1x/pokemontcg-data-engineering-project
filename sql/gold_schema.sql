@@ -51,5 +51,6 @@ CREATE TABLE fact_cards (
     avg_attack_damage DECIMAL(10,2),
     energy_cost_total INTEGER,
     is_evolution BOOLEAN,
+    market_price DECIMAL(10,2),
     inserted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
