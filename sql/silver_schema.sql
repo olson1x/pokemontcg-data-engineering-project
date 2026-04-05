@@ -32,13 +32,12 @@ CREATE TABLE silver_cards (
     supertype VARCHAR(50),
     hp INTEGER CHECK (hp >= 0),
     rarity VARCHAR(50) DEFAULT 'Unknown',
-    evolves_from VARCHAR(255),
     flavor_text TEXT,
     image_url_small TEXT,
     image_url_large TEXT,
     artist_id INTEGER REFERENCES silver_artists(artist_id),
     set_id VARCHAR(50) REFERENCES silver_sets(set_id),
-    market_price NUMERIC (10, 2)
+    market_price NUMERIC (10, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

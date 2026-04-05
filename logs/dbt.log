@@ -1,0 +1,31 @@
+[0m20:27:59.263153 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x758279b1fb30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x75827a6bf5f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x75827bafa180>]}
+
+
+============================== 20:27:59.267561 | d2b50cb0-20ec-48f9-bb7a-6789552f7bac ==============================
+[0m20:27:59.267561 [info ] [MainThread]: Running with dbt=1.11.7
+[0m20:27:59.268409 [debug] [MainThread]: running dbt with arguments {'no_print': 'None', 'printer_width': '80', 'warn_error': 'None', 'target_path': 'None', 'quiet': 'False', 'use_experimental_parser': 'False', 'log_path': 'logs', 'fail_fast': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'use_colors': 'True', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'empty': 'None', 'introspect': 'True', 'debug': 'False', 'invocation_command': 'dbt init dbt_pokemon', 'write_json': 'True', 'send_anonymous_usage_stats': 'True', 'indirect_selection': 'eager', 'log_cache_events': 'False', 'static_parser': 'True', 'log_format': 'default', 'profiles_dir': '/home/maikeolke/.dbt'}
+[0m20:27:59.281716 [info ] [MainThread]: Creating dbt configuration folder at /home/maikeolke/.dbt
+[0m20:27:59.284260 [debug] [MainThread]: Starter project path: /home/maikeolke/projects/pokemon-tcg/.venv/lib/python3.12/site-packages/dbt/include/starter_project
+[0m20:27:59.288905 [info ] [MainThread]: 
+Your new dbt project "dbt_pokemon" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m20:27:59.290366 [info ] [MainThread]: Setting up your profile.
+[0m20:30:40.094588 [info ] [MainThread]: Profile dbt_pokemon written to /home/maikeolke/.dbt/profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m20:30:40.096347 [debug] [MainThread]: Resource report: {"command_name": "init", "command_success": true, "command_wall_clock_time": 160.92526, "process_in_blocks": "14688", "process_kernel_time": 0.246389, "process_mem_max_rss": "104952", "process_out_blocks": "80", "process_user_time": 2.79542}
+[0m20:30:40.097398 [debug] [MainThread]: Command `dbt init` succeeded at 20:30:40.097170 after 160.93 seconds
+[0m20:30:40.098208 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x75827a6bf5f0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x75827972ad80>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x7582795b7cb0>]}
+[0m20:30:40.099233 [debug] [MainThread]: Flushing usage events
+[0m20:30:40.770736 [debug] [MainThread]: An error was encountered while trying to flush usage events

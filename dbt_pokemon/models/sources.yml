@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: raw_pokemon
+    description: "complete silver layer"
+    schema: public
+    tables:
+      - name: silver_cards
+        description: "raw cards"
+      - name: silver_sets
+        description: "raw sets"
+      - name: silver_artists
+        description: "raw artists"
+      - name: silver_types
+        description: "raw types"
+      - name: silver_attacks
+        description: "raw attacks"
+      - name: silver_attack_costs
+        description: "raw costs of attacks"
+      - name: silver_card_weaknesses
+        description: "raw card weaknesses"
+      - name: silver_card_types
+        description: "bridge table between types and cards"
