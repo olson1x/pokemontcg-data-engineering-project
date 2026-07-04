@@ -4,11 +4,11 @@ import psycopg2
 from dotenv import load_dotenv
 from collections import Counter
 
-# Ładowanie zmiennych środowiskowych z pliku .env
+# load env variables
 load_dotenv()
 
 def get_db_connection():
-    """Nawiązuje i zwraca połączenie z bazą PostgreSQL."""
+    """connect to postgres database."""
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
@@ -17,7 +17,7 @@ def get_db_connection():
     )
 
 def get_or_create_type(cur, type_name):
-    """Pobiera ID typu energii/żywiołu. Jeśli nie istnieje, tworzy nowy wpis w słowniku."""
+    """get or create type id."""
     if not type_name:
         return None
     cur.execute("""
@@ -32,8 +32,24 @@ def get_or_create_type(cur, type_name):
     cur.execute("SELECT type_id FROM silver_types WHERE type_name = %s", (type_name,))
     return cur.fetchone()[0]
 
+def get_or_create_subtype(cur, subtype_name):
+    """get or create subtype id."""
+    if not subtype_name:
+        return None
+    cur.execute("""
+        INSERT INTO silver_subtypes (subtype_name) 
+        VALUES (%s) 
+        ON CONFLICT (subtype_name) DO NOTHING
+        RETURNING subtype_id;
+    """, (subtype_name,))
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    cur.execute("SELECT subtype_id FROM silver_subtypes WHERE subtype_name = %s", (subtype_name,))
+    return cur.fetchone()[0]
+
 def load_artist(cur, artist_name):
-    """Zapisuje artystę do bazy lub pobiera jego ID, jeśli już istnieje."""
+    """get or create artist id."""
     name = artist_name if artist_name else "Unknown"
     cur.execute("""
         INSERT INTO silver_artists (artist_name) 
@@ -48,11 +64,11 @@ def load_artist(cur, artist_name):
     return cur.fetchone()[0]
 
 def load_all_sets(cur, base_dir):
-    """Ładuje kompletne statystyki setów z dedykowanego pliku źródłowego."""
+    """load set stats from json."""
     sets_path = os.path.join(base_dir, 'data', 'bronze', 'all_sets.json')
     
     if not os.path.exists(sets_path):
-        print(f"!!! Error: Brak pliku ze statystykami setów: {sets_path} !!!")
+        print(f"error: missing sets file at {sets_path}")
         return
 
     with open(sets_path, 'r', encoding='utf-8') as f:
@@ -77,36 +93,30 @@ def load_all_sets(cur, base_dir):
                 s.get('total'),
                 s.get('releaseDate')
             ))
-    print(f"--- Załadowano wymiar setów: {len(sets_data)} rekordów ---")
+    print(f"loaded {len(sets_data)} sets.")
 
 def load_card(cur, card_data, artist_id, set_id):
-    """Zapisuje główne informacje o karcie, przypisuje pierwszy typ i obsługuje ewolucje."""
+    """load main card data."""
     hp_raw = card_data.get('hp')
     try:
         hp_value = int(hp_raw) if hp_raw else None
     except (ValueError, TypeError):
         hp_value = None
 
-    # Zrzucamy tylko pierwszy żywioł z tablicy types
-    types_list = card_data.get('types', [])
-    type_id = get_or_create_type(cur, types_list[0]) if types_list else None
-
-    # Obsługa ewolucji (zabezpieczenie stringów)
     evolves_from = card_data.get('evolvesFrom')
     evolves_to_raw = card_data.get('evolvesTo')
     evolves_to = ", ".join(evolves_to_raw) if isinstance(evolves_to_raw, list) else None
 
     cur.execute("""
         INSERT INTO silver_cards (
-            card_id, name, supertype, hp, rarity, type_id, artist_id, set_id, evolves_from, evolves_to
+            card_id, name, supertype, hp, rarity, artist_id, set_id, evolves_from, evolves_to
         ) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) 
         ON CONFLICT (card_id) DO UPDATE SET 
             name = EXCLUDED.name,
             supertype = EXCLUDED.supertype,
             hp = EXCLUDED.hp,
             rarity = EXCLUDED.rarity,
-            type_id = EXCLUDED.type_id,
             evolves_from = EXCLUDED.evolves_from,
             evolves_to = EXCLUDED.evolves_to;
     """, (
@@ -115,15 +125,30 @@ def load_card(cur, card_data, artist_id, set_id):
         card_data.get('supertype'), 
         hp_value, 
         card_data.get('rarity', 'Unknown'),
-        type_id,
         artist_id, 
         set_id,
         evolves_from,
         evolves_to
     ))
 
+def load_card_types_and_subtypes(cur, card_id, card_data):
+    """populate bridge tables for types and subtypes."""
+    for t_name in card_data.get('types', []):
+        t_id = get_or_create_type(cur, t_name)
+        cur.execute("""
+            INSERT INTO silver_card_types (card_id, type_id)
+            VALUES (%s, %s) ON CONFLICT DO NOTHING
+        """, (card_id, t_id))
+
+    for s_name in card_data.get('subtypes', []):
+        s_id = get_or_create_subtype(cur, s_name)
+        cur.execute("""
+            INSERT INTO silver_card_subtypes (card_id, subtype_id)
+            VALUES (%s, %s) ON CONFLICT DO NOTHING
+        """, (card_id, s_id))
+
 def load_weaknesses_and_resistances(cur, card_id, card_data):
-    """Wypełnia tabele łączące dla słabości i odporności kart."""
+    """populate weaknesses and resistances."""
     for weak in card_data.get('weaknesses', []):
         t_id = get_or_create_type(cur, weak.get('type'))
         cur.execute("""
@@ -139,7 +164,7 @@ def load_weaknesses_and_resistances(cur, card_id, card_data):
         """, (card_id, t_id, res.get('value')))
 
 def load_attacks(cur, card_id, attacks_data):
-    """Mapuje ataki i rozbija koszty energii (z pominięciem kolumny description)."""
+    """load attacks and energy costs."""
     if not attacks_data:
         return
     for atk in attacks_data:
@@ -163,23 +188,23 @@ def load_attacks(cur, card_id, attacks_data):
             """, (attack_id, t_id, count))
 
 def run_etl():
-    """Główny proces ETL: inicjalizacja wymiarów niezależnych, a następnie iteracja po plikach kart."""
+    """main etl process for static card data."""
     conn = get_db_connection()
     cur = conn.cursor()
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    # Inicjalizacja pełnych danych o setach przed przetworzeniem kart
+    # load sets first
     load_all_sets(cur, base_dir)
     conn.commit()
 
     path = os.path.join(base_dir, 'data', 'bronze', 'cards')
     
     if not os.path.exists(path):
-        print(f"!!! Error: Brak katalogu ze źródłami kart: {path} !!!")
+        print(f"error: missing cards directory at {path}")
         return
 
     files = [f for f in os.listdir(path) if f.endswith('.json')]
-    print(f"--- ETL Start (Karty): {len(files)} plików do przetworzenia ---")
+    print(f"starting etl: {len(files)} files to process.")
 
     total_cards = 0
 
@@ -199,20 +224,22 @@ def run_etl():
                     c_id = card_data.get('id')
                     a_id = load_artist(cur, card_data.get('artist'))
                     
+                    # order matters
                     load_card(cur, card_data, a_id, set_id)
+                    load_card_types_and_subtypes(cur, c_id, card_data)
                     load_weaknesses_and_resistances(cur, c_id, card_data)
                     load_attacks(cur, c_id, card_data.get('attacks', []))
                     total_cards += 1
 
                 conn.commit()
-                print(f"Przetworzono set: {set_id}")
+                print(f"processed set: {set_id}")
             except Exception as e:
-                print(f"!!! Wyjątek w pliku {file}: {e} !!!")
+                print(f"error processing file {file}: {e}")
                 conn.rollback()
 
     cur.close()
     conn.close()
-    print(f"--- Zakończono: załadowano {total_cards} kart ---")
+    print(f"finished. loaded {total_cards} cards.")
 
 if __name__ == "__main__":
     run_etl()

@@ -1,11 +1,12 @@
 import os
-import csv
 import psycopg2
 from dotenv import load_dotenv
 
+# load env
 load_dotenv()
 
 def get_db_connection():
+    """connect to postgres database."""
     return psycopg2.connect(
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
@@ -13,39 +14,36 @@ def get_db_connection():
         host=os.getenv("DB_HOST")
     )
 
-def run_prices_load():
+def load_market_prices():
+    """load price history from csv using fast bulk copy."""
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # set path
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    csv_path = os.path.join(base_dir, 'data', 'bronze', 'prices', 'market_prices.csv')
+    prices_path = os.path.join(base_dir, 'data', 'bronze', 'prices', 'market_prices.csv')
     
-    if not os.path.exists(csv_path):
-        print(f"Error: {csv_path} not found.")
+    if not os.path.exists(prices_path):
+        print(f"error: missing prices file at {prices_path}")
         return
-
-    print("updating prices...")
-    success_count = 0
-
-    with open(csv_path, mode='r', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            cur.execute("""
-                UPDATE silver_cards 
-                SET market_price = %s 
-                WHERE card_id = %s;
-            """, (row['market_price_usd'], row['card_id']))
-            
-            if cur.rowcount > 0:
-                success_count += 1
-
+    
+    print("starting bulk load for prices...")
+    
+    # clear table to avoid duplicates on rerun
+    cur.execute("TRUNCATE TABLE silver_prices;")
+    
+    # fast copy directly to postgres engine
+    with open(prices_path, 'r', encoding='utf-8') as f:
+        copy_sql = """
+            COPY silver_prices (card_id, set_id, date, market_price_usd) 
+            FROM STDIN WITH CSV HEADER DELIMITER ','
+        """
+        cur.copy_expert(sql=copy_sql, file=f)
+        
     conn.commit()
-    
-    print(f"updated: {success_count} records.")
-    
     cur.close()
     conn.close()
+    
+    print("finished loading market prices.")
 
 if __name__ == "__main__":
-    run_prices_load()
+    load_market_prices()
