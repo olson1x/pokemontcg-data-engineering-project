@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import psycopg2
 from dotenv import load_dotenv
 from collections import Counter
@@ -189,6 +190,8 @@ def load_attacks(cur, card_id, attacks_data):
 
 def run_etl():
     """main etl process for static card data."""
+    start_time = time.time()
+    
     conn = get_db_connection()
     cur = conn.cursor()
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -224,7 +227,6 @@ def run_etl():
                     c_id = card_data.get('id')
                     a_id = load_artist(cur, card_data.get('artist'))
                     
-                    # order matters
                     load_card(cur, card_data, a_id, set_id)
                     load_card_types_and_subtypes(cur, c_id, card_data)
                     load_weaknesses_and_resistances(cur, c_id, card_data)
@@ -239,7 +241,9 @@ def run_etl():
 
     cur.close()
     conn.close()
-    print(f"finished. loaded {total_cards} cards.")
+    
+    end_time = time.time()
+    print(f"finished in {round(end_time - start_time, 2)} seconds. loaded {total_cards} cards.")
 
 if __name__ == "__main__":
     run_etl()

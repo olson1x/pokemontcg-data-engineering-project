@@ -1,4 +1,5 @@
 import os
+import time
 import psycopg2
 from dotenv import load_dotenv
 
@@ -28,6 +29,8 @@ def load_market_prices():
     
     print("starting bulk load for prices...")
     
+    start_time = time.time()
+    
     # clear table to avoid duplicates on rerun
     cur.execute("TRUNCATE TABLE silver_prices;")
     
@@ -43,7 +46,8 @@ def load_market_prices():
     cur.close()
     conn.close()
     
-    print("finished loading market prices.")
+    end_time = time.time()
+    print(f"finished loading market prices in {round(end_time - start_time, 2)} seconds.")
 
 if __name__ == "__main__":
     load_market_prices()
