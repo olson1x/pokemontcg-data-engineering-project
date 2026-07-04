@@ -1,36 +1,43 @@
-# Pokemon TCG - ETL vs ELT Architecture Comparison 🃏⚖️
+# pokemon tcg - etl vs elt architecture comparison
 
-Projekt ma na celu praktyczne porównanie dwóch najpopularniejszych paradygmatów inżynierii danych: **ETL** (Extract, Transform, Load) oraz **ELT** (Extract, Load, Transform). Wykorzystujemy ten sam zbiór danych (Karty Pokémon), aby zademonstrować różnice w wydajności, skalowalności i elastyczności obu podejść.
-
----
-
-## 🎯 Project Goal
-
-Głównym założeniem jest integracja danych technicznych i rynkowych przy użyciu dwóch różnych ścieżek procesowania:
-
-### ⚙️ Ścieżka ETL (Python-centric)
-* **Dane:** JSON (GitHub API) / CSV (Synthetic data)
-* **Proces:** Cała logika transformacji (czyszczenie, typowanie danych, mapowanie relacji) odbywa się w Pythonie przed załadowaniem do bazy.
-* **Zastosowanie:** Precyzyjne sterowanie obiektowe, skomplikowana logika biznesowa w kodzie.
-
-### ⚡ Ścieżka ELT (Database-centric)
-* **Dane:** Te same źródła (JSON/CSV).
-* **Proces:** Szybki import surowych danych (Raw/Staging) do PostgreSQL za pomocą komend systemowych (`COPY`), a następnie transformacja przy użyciu czystego SQL.
-* **Zastosowanie:** Wykorzystanie mocy obliczeniowej silnika bazy danych, szybkość przy dużych wolumenach (Big Data).
+this project provides a practical comparison between the two most popular data engineering paradigms: etl (extract, transform, load) and elt (extract, load, transform). we use pokemon trading card data and synthetic market prices to demonstrate differences in performance, scalability, and flexibility.
 
 ---
 
-## 🛠️ Tech Stack
+## project goal
 
-* **Language:** Python 3.x (ETL Engine)
-* **Database:** PostgreSQL (ELT Engine & Storage)
-* **Ops:** Docker & Docker Compose (Containerization 🏗️)
-* **Libraries:** `psycopg2`, `requests`, `python-dotenv`
+the main objective is to integrate technical and market data using two distinct processing paths and compare their outcomes.
+
+## data sources
+
+* json (pokemon tcg data)
+* csv (synthetic market prices)
+
+### etl path (python-driven)
+* **process:** all transformation logic (cleaning, data typing, relational mapping) is executed in python before loading the data into the database.
+* **use case:** precise object-oriented control and handling complex logic in code.
+* **flow:** python scripts process raw local files and insert cleaned data directly into structured silver and gold tables.
+
+### elt path (dbt-driven)
+* **process:** fast ingestion of raw data directly into postgresql staging tables using native database commands (e.g., `copy`), bypassing python transformations entirely. once loaded, all data modeling is handled via pure sql using dbt.
+* **use case:** leveraging the database engine's compute power, optimized for modern data warehouse environments.
+* **flow:** raw files -> postgres staging (jsonb/raw text) -> dbt models -> silver/gold tables.
 
 ---
 
-## 📂 Data Architecture (Medallion)
+## tech stack
 
-* **Bronze (Raw):** Surowe pliki wejściowe (JSON/CSV).
-* **Staging (ELT only):** Tymczasowe tabele techniczne przechowujące dane "as-is".
-* **Silver (Production):** Docelowy model relacyjny (`cards`, `sets`, `artists`) zasilany obiema metodami dla porównania wyników.
+* **language:** python 3.x (etl engine)
+* **database:** postgresql (elt engine & storage)
+* **transformations:** dbt (data build tool)
+* **ops:** docker & docker compose
+* **libraries:** `psycopg2`, `python-dotenv`
+
+---
+
+## data architecture (medallion)
+
+* **bronze (raw):** raw input files stored locally (json/csv).
+* **staging (elt only):** technical tables in the database storing data exactly "as-is" (e.g., raw json strings).
+* **silver:** normalized relational model (cards, sets, bridge tables).
+* **gold:** star schema (fact and dimension tables) optimized for bi and analytics.
