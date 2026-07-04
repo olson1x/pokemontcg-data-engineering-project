@@ -18,6 +18,11 @@ CREATE TABLE silver_types (
     type_name VARCHAR(50) UNIQUE NOT NULL
 );
 
+CREATE TABLE silver_subtypes (
+    subtype_id SERIAL PRIMARY KEY,
+    subtype_name VARCHAR(255) UNIQUE NOT NULL
+);
+
 -- main table
 CREATE TABLE silver_cards (
     card_id VARCHAR(50) PRIMARY KEY,
@@ -25,13 +30,24 @@ CREATE TABLE silver_cards (
     supertype VARCHAR(50),
     hp INTEGER CHECK (hp >= 0),
     rarity VARCHAR(50) DEFAULT 'Unknown',
-    type_id INTEGER REFERENCES silver_types(type_id),
     artist_id INTEGER REFERENCES silver_artists(artist_id),
     set_id VARCHAR(50) REFERENCES silver_sets(set_id),
     evolves_from VARCHAR(255),
     evolves_to VARCHAR(255),
-    market_price NUMERIC (10, 2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- bridge tables
+CREATE TABLE silver_card_types (
+    card_id VARCHAR(50) REFERENCES silver_cards(card_id),
+    type_id INTEGER REFERENCES silver_types(type_id),
+    PRIMARY KEY (card_id, type_id)
+);
+
+CREATE TABLE silver_card_subtypes (
+    card_id VARCHAR(50) REFERENCES silver_cards(card_id),
+    subtype_id INTEGER REFERENCES silver_subtypes(subtype_id),
+    PRIMARY KEY (card_id, subtype_id)
 );
 
 -- weaknesses, resistances
@@ -63,4 +79,13 @@ CREATE TABLE silver_attack_costs (
     type_id INTEGER REFERENCES silver_types(type_id),
     count INTEGER DEFAULT 1,
     PRIMARY KEY (attack_id, type_id)
+);
+
+-- synthetic data
+CREATE TABLE silver_prices (
+    price_id SERIAL PRIMARY KEY,
+    card_id VARCHAR(50) REFERENCES silver_cards(card_id),
+    set_id VARCHAR(50) REFERENCES silver_sets(set_id),
+    date DATE,
+    market_price_usd NUMERIC(10, 2)
 );
