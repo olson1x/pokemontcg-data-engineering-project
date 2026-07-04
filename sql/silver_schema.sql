@@ -1,3 +1,17 @@
+-- drop existing tables if needed
+drop table if exists silver_artists cascade;
+drop table if exists silver_sets cascade;
+drop table if exists silver_types cascade;
+drop table if exists silver_subtypes cascade;
+drop table if exists silver_cards cascade;
+drop table if exists silver_card_types cascade;
+drop table if exists silver_card_subtypes cascade;
+drop table if exists silver_card_weaknesses cascade;
+drop table if exists silver_card_resistances cascade;
+drop table if exists silver_attacks cascade;
+drop table if exists silver_attack_costs cascade;
+drop table if exists silver_prices cascade;
+
 -- warstwa silver
 CREATE TABLE silver_artists (
     artist_id SERIAL PRIMARY KEY,
