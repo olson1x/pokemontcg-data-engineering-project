@@ -5,6 +5,8 @@ import random
 from datetime import date, timedelta
 from dotenv import load_dotenv
 
+from src.config import MARKET_PRICES_FILE
+
 load_dotenv()
 
 def get_db_connection():
@@ -38,18 +40,15 @@ def generate_market_data():
     start_date = date.today() - timedelta(days=days_history)
     total_expected_rows = total_cards * days_history
 
-    # generowanie cen i save do CSV
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    output_path = os.path.join(base_dir, 'data', 'bronze', 'prices', 'market_prices.csv')
-    
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    # tworzenie folderów docelowych przy użyciu pathlib
+    MARKET_PRICES_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-    print(f"generating {total_expected_rows} prices and saving into {output_path}...")
+    print(f"generating {total_expected_rows} prices and saving into {MARKET_PRICES_FILE}...")
     
     headers = ['card_id', 'set_id', 'date', 'market_price_usd']
     
     generated_count = 0
-    with open(output_path, mode='w', encoding='utf-8', newline='') as f:
+    with open(MARKET_PRICES_FILE, mode='w', encoding='utf-8', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(headers)
         

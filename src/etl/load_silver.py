@@ -5,6 +5,8 @@ import psycopg2
 from dotenv import load_dotenv
 from collections import Counter
 
+from src.config import ALL_SETS_FILE, CARDS_DIR
+
 # load env variables
 load_dotenv()
 
@@ -64,15 +66,13 @@ def load_artist(cur, artist_name):
     cur.execute("SELECT artist_id FROM silver_artists WHERE artist_name = %s", (name,))
     return cur.fetchone()[0]
 
-def load_all_sets(cur, base_dir):
+def load_all_sets(cur):
     """load set stats from json."""
-    sets_path = os.path.join(base_dir, 'data', 'bronze', 'all_sets.json')
-    
-    if not os.path.exists(sets_path):
-        print(f"error: missing sets file at {sets_path}")
+    if not ALL_SETS_FILE.exists():
+        print(f"error: missing sets file at {ALL_SETS_FILE}")
         return
 
-    with open(sets_path, 'r', encoding='utf-8') as f:
+    with open(ALL_SETS_FILE, 'r', encoding='utf-8') as f:
         content = json.load(f)
         sets_data = content.get('data', [])
         
@@ -194,26 +194,24 @@ def run_etl():
     
     conn = get_db_connection()
     cur = conn.cursor()
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    # load sets first
-    load_all_sets(cur, base_dir)
+    # ładujemy sety 
+    load_all_sets(cur)
     conn.commit()
 
-    path = os.path.join(base_dir, 'data', 'bronze', 'cards')
-    
-    if not os.path.exists(path):
-        print(f"error: missing cards directory at {path}")
+    if not CARDS_DIR.exists():
+        print(f"error: missing cards directory at {CARDS_DIR}")
         return
 
-    files = [f for f in os.listdir(path) if f.endswith('.json')]
+    # używamy glob z pathlib do pobrania listy wszystkich plików .json
+    files = list(CARDS_DIR.glob('*.json'))
     print(f"starting etl: {len(files)} files to process.")
 
     total_cards = 0
 
-    for file in files:
-        set_id = file.replace('.json', '')
-        file_path = os.path.join(path, file)
+    for file_path in files:
+        # wyciągamy nazwę pliku bez rozszerzenia .json używając właściwości .stem
+        set_id = file_path.stem
         
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
@@ -236,7 +234,7 @@ def run_etl():
                 conn.commit()
                 print(f"processed set: {set_id}")
             except Exception as e:
-                print(f"error processing file {file}: {e}")
+                print(f"error processing file {file_path.name}: {e}")
                 conn.rollback()
 
     cur.close()

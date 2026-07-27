@@ -3,6 +3,9 @@ import time
 import psycopg2
 from dotenv import load_dotenv
 
+# path import
+from src.config import MARKET_PRICES_FILE
+
 # load env
 load_dotenv()
 
@@ -20,11 +23,9 @@ def load_market_prices():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    prices_path = os.path.join(base_dir, 'data', 'bronze', 'prices', 'market_prices.csv')
-    
-    if not os.path.exists(prices_path):
-        print(f"error: missing prices file at {prices_path}")
+    # exist check
+    if not MARKET_PRICES_FILE.exists():
+        print(f"error: missing prices file at {MARKET_PRICES_FILE}")
         return
     
     print("starting bulk load for prices...")
@@ -34,8 +35,7 @@ def load_market_prices():
     # clear table to avoid duplicates on rerun
     cur.execute("TRUNCATE TABLE silver_prices;")
     
-    # fast copy directly to postgres engine
-    with open(prices_path, 'r', encoding='utf-8') as f:
+    with open(MARKET_PRICES_FILE, 'r', encoding='utf-8') as f:
         copy_sql = """
             COPY silver_prices (card_id, set_id, date, market_price_usd) 
             FROM STDIN WITH CSV HEADER DELIMITER ','
