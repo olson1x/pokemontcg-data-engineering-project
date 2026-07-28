@@ -20,34 +20,46 @@ def get_db_connection():
 
 def load_market_prices():
     """load price history from csv using fast bulk copy."""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # exist check
-    if not MARKET_PRICES_FILE.exists():
-        print(f"error: missing prices file at {MARKET_PRICES_FILE}")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    except Exception as e:
+        print(f"db connection error: {e}")
         return
     
-    print("starting bulk load for prices...")
-    
-    start_time = time.time()
-    
-    # clear table to avoid duplicates on rerun
-    cur.execute("TRUNCATE TABLE silver_prices;")
-    
-    with open(MARKET_PRICES_FILE, 'r', encoding='utf-8') as f:
-        copy_sql = """
-            COPY silver_prices (card_id, set_id, date, market_price_usd) 
-            FROM STDIN WITH CSV HEADER DELIMITER ','
-        """
-        cur.copy_expert(sql=copy_sql, file=f)
+    try:
+        # exist check
+        if not MARKET_PRICES_FILE.exists():
+            print(f"error: missing file at {MARKET_PRICES_FILE}")
+            return
         
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    end_time = time.time()
-    print(f"finished loading market prices in {round(end_time - start_time, 2)} seconds.")
+        print("starting bulk load...")
+        
+        start_time = time.time()
+        
+        # clear table to avoid duplicates on rerun
+        cur.execute("TRUNCATE TABLE silver_prices;")
+        
+        with open(MARKET_PRICES_FILE, 'r', encoding='utf-8') as f:
+            copy_sql = """
+                COPY silver_prices (card_id, set_id, date, market_price_usd) 
+                FROM STDIN WITH CSV HEADER DELIMITER ','
+            """
+            cur.copy_expert(sql=copy_sql, file=f)
+            
+        conn.commit()
+        
+        end_time = time.time()
+        print(f"done: loaded in {round(end_time - start_time, 2)}s")
+        
+    except Exception as e:
+        print(f"error: {e}")
+        conn.rollback()
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 if __name__ == "__main__":
     load_market_prices()

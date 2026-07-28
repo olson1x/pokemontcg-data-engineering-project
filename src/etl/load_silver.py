@@ -94,7 +94,7 @@ def load_all_sets(cur):
                 s.get('total'),
                 s.get('releaseDate')
             ))
-    print(f"loaded {len(sets_data)} sets.")
+    print(f"loaded: {len(sets_data)} sets")
 
 def load_card(cur, card_data, artist_id, set_id):
     """load main card data."""
@@ -192,56 +192,68 @@ def run_etl():
     """main etl process for static card data."""
     start_time = time.time()
     
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # ładujemy sety 
-    load_all_sets(cur)
-    conn.commit()
-
-    if not CARDS_DIR.exists():
-        print(f"error: missing cards directory at {CARDS_DIR}")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+    except Exception as e:
+        print(f"db connection error: {e}")
         return
-
-    # używamy glob z pathlib do pobrania listy wszystkich plików .json
-    files = list(CARDS_DIR.glob('*.json'))
-    print(f"starting etl: {len(files)} files to process.")
-
-    total_cards = 0
-
-    for file_path in files:
-        # wyciągamy nazwę pliku bez rozszerzenia .json używając właściwości .stem
-        set_id = file_path.stem
         
-        with open(file_path, 'r', encoding='utf-8') as f:
-            try:
-                content = json.load(f)
-                cards = content.get('data', []) if isinstance(content, dict) else content
-                
-                if not isinstance(cards, list) or not cards: 
-                    continue
+    try:
+        try:
+            # ładujemy sety 
+            load_all_sets(cur)
+            conn.commit()
+        except Exception as e:
+            print(f"error loading sets: {e}")
+            conn.rollback()
 
-                for card_data in cards:
-                    c_id = card_data.get('id')
-                    a_id = load_artist(cur, card_data.get('artist'))
+        if not CARDS_DIR.exists():
+            print(f"error: missing cards dir at {CARDS_DIR}")
+            return
+
+        # używamy glob z pathlib do pobrania listy wszystkich plików .json
+        files = list(CARDS_DIR.glob('*.json'))
+        print(f"found: {len(files)} files to process")
+
+        total_cards = 0
+
+        for file_path in files:
+            # wyciągamy nazwę pliku bez rozszerzenia .json używając właściwości .stem
+            set_id = file_path.stem
+            
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = json.load(f)
+                    cards = content.get('data', []) if isinstance(content, dict) else content
                     
-                    load_card(cur, card_data, a_id, set_id)
-                    load_card_types_and_subtypes(cur, c_id, card_data)
-                    load_weaknesses_and_resistances(cur, c_id, card_data)
-                    load_attacks(cur, c_id, card_data.get('attacks', []))
-                    total_cards += 1
+                    if not isinstance(cards, list) or not cards: 
+                        continue
+
+                    for card_data in cards:
+                        c_id = card_data.get('id')
+                        a_id = load_artist(cur, card_data.get('artist'))
+                        
+                        load_card(cur, card_data, a_id, set_id)
+                        load_card_types_and_subtypes(cur, c_id, card_data)
+                        load_weaknesses_and_resistances(cur, c_id, card_data)
+                        load_attacks(cur, c_id, card_data.get('attacks', []))
+                        total_cards += 1
 
                 conn.commit()
-                print(f"processed set: {set_id}")
+                print(f"processed: {set_id}")
             except Exception as e:
-                print(f"error processing file {file_path.name}: {e}")
+                print(f"error in {file_path.name}: {e}")
                 conn.rollback()
 
-    cur.close()
-    conn.close()
+    finally:
+        if 'cur' in locals() and cur:
+            cur.close()
+        if 'conn' in locals() and conn:
+            conn.close()
     
     end_time = time.time()
-    print(f"finished in {round(end_time - start_time, 2)} seconds. loaded {total_cards} cards.")
+    print(f"done: {total_cards} cards in {round(end_time - start_time, 2)}s")
 
 if __name__ == "__main__":
     run_etl()
